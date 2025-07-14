@@ -24,8 +24,7 @@ public interface ClovaVoiceClient {
      * @param requestBody form-encoded 요청 본문
      * @return TTS 응답 (MP3 바이너리 데이터)
      */
-    @PostMapping(value = "/tts-premium/v1/tts", 
-                consumes = "application/x-www-form-urlencoded")
+    @PostMapping(consumes = "application/x-www-form-urlencoded")
     byte[] generateSpeech(
         @RequestHeader("X-NCP-APIGW-API-KEY-ID") String clientId,
         @RequestHeader("X-NCP-APIGW-API-KEY") String clientSecret,
