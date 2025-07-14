@@ -51,7 +51,6 @@ external-api:
 
     hyperclova:
       api-key: ${NAVER_HYPERCLOVA_API_KEY}
-#      apigw-api-key: ${NAVER_HYPERCLOVA_APIGW_API_KEY}
       api-gateway-url: ${NAVER_HYPERCLOVA_API_GATEWAY_URL}
       request-id: ${NAVER_HYPERCLOVA_REQUEST_ID}
 
