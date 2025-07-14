@@ -50,10 +50,7 @@ public class NewsServiceImpl implements NewsService {
     
     @Value("${external-api.naver.hyperclova.api-key}")
     private String hyperClovaApiKey;
-    
-//    @Value("${external-api.naver.hyperclova.apigw-api-key}")
-//    private String hyperClovaApigwApiKey;
-    
+
     @Value("${external-api.naver.hyperclova.request-id}")
     private String hyperClovaRequestId;
     
