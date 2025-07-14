@@ -1,0 +1,19 @@
+# application-docker.yml
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: ${MYSQL_DOCKER_URL}
+    driver-class-name: ${MYSQL_DRIVER_CLASS_NAME}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # 운영 시에는 validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

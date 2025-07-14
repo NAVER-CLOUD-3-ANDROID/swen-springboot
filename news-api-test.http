@@ -1,0 +1,91 @@
+### 뉴스 API 테스트 파일 (글로벌 응답 시스템 적용)
+
+### 1. 헬스 체크
+GET http://localhost:8080/api/v1/news/health
+
+### 2. 🎵 랜덤 뉴스 플레이 (GET - 플레이 버튼용) - 1분 내 다정한 목소리
+GET http://localhost:8080/api/v1/news/play
+
+### 3. 🎵 랜덤 뉴스 플레이 (GET - 긴 버전)
+GET http://localhost:8080/api/v1/news/play?scriptLength=MEDIUM
+
+### 4. 🎵 랜덤 뉴스 플레이 (POST - 빈 요청) - 기본 1분 내
+POST http://localhost:8080/api/v1/news/play
+Content-Type: application/json
+
+{}
+
+### 5. 🎵 주제별 뉴스 플레이 (POST) - AI 뉴스
+POST http://localhost:8080/api/v1/news/play
+Content-Type: application/json
+
+{
+    "topic": "AI 인공지능"
+}
+
+### 6. 🎵 경제 뉴스 - 긴 버전
+POST http://localhost:8080/api/v1/news/play
+Content-Type: application/json
+
+{
+    "topic": "경제 동향",
+    "scriptLength": "LONG"
+}
+
+### 7. 🎵 요청 본문 없이 POST (랜덤 뉴스)
+POST http://localhost:8080/api/v1/news/play
+
+### 8. 뉴스 검색 테스트 (GET - 단건) - 특정 키워드
+GET http://localhost:8080/api/v1/news/search?query=AI
+
+### 8-1. 뉴스 검색 테스트 (GET - 단건) - 랜덤 키워드
+GET http://localhost:8080/api/v1/news/search
+
+### 8-2. 뉴스 검색 테스트 (GET - 단건) - 경제 뉴스
+GET http://localhost:8080/api/v1/news/search?query=경제
+
+### 8-3. 뉴스 검색 테스트 (GET - 단건) - 스포츠 뉴스
+GET http://localhost:8080/api/v1/news/search?query=스포츠
+
+### 9. 스크립트 생성 테스트 (기본)
+POST http://localhost:8080/api/v1/news/script?title=AI 기술 발전&description=인공지능 기술이 빠르게 발전하고 있습니다&publisher=테크뉴스&scriptLength=SHORT
+
+### 9-1. 스크립트 생성 테스트 (링크 포함)
+POST http://localhost:8080/api/v1/news/script?title=경제 동향&description=올해 경제 성장률이 예상보다 높게 나타났습니다&publisher=경제일보&originallink=https://example.com/news1&link=https://news.naver.com/example&scriptLength=MEDIUM
+
+### 10. TTS 변환 테스트
+POST http://localhost:8080/api/v1/news/tts?script=안녕하세요 오늘의 뉴스를 전해드릴게요
+
+### 11. 🎵 날씨 뉴스 테스트
+POST http://localhost:8080/api/v1/news/play
+Content-Type: application/json
+
+{
+    "topic": "날씨"
+}
+
+### 12. 🎵 스포츠 뉴스 테스트
+POST http://localhost:8080/api/v1/news/play
+Content-Type: application/json
+
+{
+    "topic": "스포츠",
+    "scriptLength": "MEDIUM"
+}
+
+### 13. 🎵 에러 테스트 - 잘못된 스크립트 길이
+POST http://localhost:8080/api/v1/news/play
+Content-Type: application/json
+
+{
+    "topic": "기술",
+    "scriptLength": "INVALID"
+}
+
+### 14. 🎵 특수문자 포함 주제 테스트
+POST http://localhost:8080/api/v1/news/play
+Content-Type: application/json
+
+{
+    "topic": "코로나19"
+}
