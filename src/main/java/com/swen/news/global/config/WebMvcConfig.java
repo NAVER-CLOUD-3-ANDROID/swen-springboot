@@ -1,4 +1,4 @@
-package com.swen.news.global;
+package com.swen.news.global.config;
 
 import com.swen.news.global.resolver.StrictPageableResolver;
 import org.springframework.context.annotation.Configuration;
