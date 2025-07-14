@@ -51,8 +51,8 @@ public class NewsServiceImpl implements NewsService {
     @Value("${external-api.naver.hyperclova.api-key}")
     private String hyperClovaApiKey;
     
-    @Value("${external-api.naver.hyperclova.apigw-api-key}")
-    private String hyperClovaApigwApiKey;
+//    @Value("${external-api.naver.hyperclova.apigw-api-key}")
+//    private String hyperClovaApigwApiKey;
     
     @Value("${external-api.naver.hyperclova.request-id}")
     private String hyperClovaRequestId;
@@ -139,9 +139,9 @@ public class NewsServiceImpl implements NewsService {
             String requestBody = buildHyperClovaRequest(prompt);
             
             String response = hyperClovaClient.generateScript(
-                hyperClovaApiKey,
-                hyperClovaApigwApiKey,
+                "Bearer " + hyperClovaApiKey,  // Authorization: Bearer 형식
                 hyperClovaRequestId,
+                "application/json",             // Content-Type
                 requestBody
             );
             
@@ -246,7 +246,8 @@ public class NewsServiceImpl implements NewsService {
         prompt.append("- 중요한 정보를 명확하게 전달\n");
         prompt.append("- 듣기 좋은 속도와 리듬으로 작성\n");
         prompt.append("- 친근하면서도 정확한 정보 전달\n");
-        prompt.append("- 제공된 뉴스 요약 정보만 활용\n\n");
+        prompt.append("- 제공된 뉴스 요약 정보만 활용\n");
+        prompt.append("- 스크립트의 맨 마지막은 반드시 '이상입니다.'로 끝낼 것\n\n");
         
         prompt.append("뉴스 정보:\n");
         for (int i = 0; i < newsItems.size(); i++) {
@@ -265,7 +266,10 @@ public class NewsServiceImpl implements NewsService {
             prompt.append("\n");
         }
         
-        prompt.append("주의사항: 위 요약 정보만을 바탕으로 스크립트를 작성하세요. 추가적인 정보를 추측하거나 생성하지 마세요.");
+        prompt.append("주의사항:\n");
+        prompt.append("- 위 요약 정보만을 바탕으로 스크립트를 작성하세요\n");
+        prompt.append("- 추가적인 정보를 추측하거나 생성하지 마세요\n");
+        prompt.append("- 스크립트는 반드시 '이상입니다.'로 마무리해주세요");
         
         return prompt.toString();
     }
