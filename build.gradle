@@ -63,6 +63,10 @@ dependencies {
 	// AWS SDK for NCP Object Storage (S3 호환)
 	implementation 'software.amazon.awssdk:s3:2.20.26'
 	implementation 'software.amazon.awssdk:auth:2.20.26'
+
+	// OAuth2 및 Spring Security 의존성 추가
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 }
 
 dependencyManagement {
