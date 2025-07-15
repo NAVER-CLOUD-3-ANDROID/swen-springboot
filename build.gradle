@@ -28,37 +28,41 @@ ext {
 }
 
 dependencies {
-	//Spring Framework
+	// Spring Framework
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
-	//Spring Cloud
+	// Spring Cloud
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
-	//Lombok
+	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	//DevTools
+	// DevTools
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	//DB drivers
+	// DB drivers
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
 	// env
 	implementation 'io.github.cdimascio:java-dotenv:5.2.2'
 
-	//Testing
+	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-	//API Docs
+	// API Docs
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
-	//JSON Processing
+	// JSON Processing
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+	// AWS SDK for NCP Object Storage (S3 호환)
+	implementation 'software.amazon.awssdk:s3:2.20.26'
+	implementation 'software.amazon.awssdk:auth:2.20.26'
 }
 
 dependencyManagement {

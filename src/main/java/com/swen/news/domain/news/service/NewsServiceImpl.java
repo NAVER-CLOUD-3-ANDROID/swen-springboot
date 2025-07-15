@@ -9,6 +9,7 @@ import com.swen.news.domain.news.exception.NewsException;
 import com.swen.news.global.client.ClovaVoiceClient;
 import com.swen.news.global.client.HyperClovaClient;
 import com.swen.news.global.client.NaverNewsClient;
+import com.swen.news.global.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,11 +33,11 @@ public class NewsServiceImpl implements NewsService {
     private final NaverNewsClient naverNewsClient;
     private final HyperClovaClient hyperClovaClient;
     private final ClovaVoiceClient clovaVoiceClient;
+    private final ObjectStorageService objectStorageService; // 추가
     private final ObjectMapper objectMapper;
     
-    // 고정 음성 설정 - 다정하고 깔끔한 톤
-    private static final String VOICE_STYLE = "다정한";
-    private static final String TTS_SPEAKER = "nara";
+    // 고정 음성 설정 - 신뢰가는 차분한 톤 (수진)
+    private static final String TTS_SPEAKER = "nsujin";
     
     @Value("${external-api.naver.news.client-id}")
     private String naverClientId;
@@ -160,8 +161,13 @@ public class NewsServiceImpl implements NewsService {
                 requestBody
             );
             
-            // 바이너리 데이터를 Base64로 인코딩하여 반환 (실제로는 파일 저장이나 URL 반환)
-            return "data:audio/mp3;base64," + java.util.Base64.getEncoder().encodeToString(audioData);
+            log.info("TTS 변환 완료 - 음성 데이터 크기: {} bytes", audioData.length);
+            
+            // Object Storage에 업로드하고 URL 반환
+            String audioUrl = objectStorageService.uploadAudioFile(audioData);
+            
+            log.info("음성 파일 업로드 완료 - URL: {}", audioUrl);
+            return audioUrl;
             
         } catch (Exception e) {
             log.error("CLOVA Voice TTS 변환 중 오류 발생", e);
@@ -225,41 +231,37 @@ public class NewsServiceImpl implements NewsService {
         prompt.append("다음 뉴스 기사를 바탕으로 ");
         
         switch (scriptLength) {
-            case "SHORT" -> prompt.append("1분 내로 읽을 수 있는 간단한 ");
-            case "LONG" -> prompt.append("5분 분량의 상세한 ");
-            default -> prompt.append("3분 분량의 ");
+            case "SHORT" -> prompt.append("30초 내로 읽을 수 있는 간단한 ");
+            case "LONG" -> prompt.append("3분 분량의 상세한 ");
+            default -> prompt.append("1분 분량의 ");
         }
         
         prompt.append("뉴스 리포트 스크립트를 작성해주세요.\n\n");
-        prompt.append("스타일: 다정하고 깔끔한 톤\n");
+        prompt.append("스타일: 신뢰가는 차분한 톤\n");
         prompt.append("요구사항:\n");
         prompt.append("- 자연스러운 한국어로 작성\n");
+        prompt.append("- 반드시 '안녕하십니까, [카테고리]에 관련된 내용입니다.'로 시작할 것\n");
+        prompt.append("- 기승전결이 담기도록 작성\n");
+        prompt.append("- 뉴스 내용만 포함하고, 제목이나 언론사명은 언급하지 말 것\n");
+        prompt.append("- [시작], [끝] 같은 표시 문구는 사용하지 말 것\n");
         prompt.append("- 중요한 정보를 명확하게 전달\n");
         prompt.append("- 듣기 좋은 속도와 리듬으로 작성\n");
         prompt.append("- 친근하면서도 정확한 정보 전달\n");
-        prompt.append("- 제공된 뉴스 요약 정보만 활용\n");
+        prompt.append("- 제공된 뉴스 요약 정보와 link만 활용\n");
         prompt.append("- 스크립트의 맨 마지막은 반드시 '이상입니다.'로 끝낼 것\n\n");
         
         prompt.append("뉴스 정보:\n");
         for (int i = 0; i < newsItems.size(); i++) {
             NewsItem item = newsItems.get(i);
-            prompt.append(String.format("%d. 제목: %s\n", i + 1, item.getTitle()));
-            prompt.append(String.format("   내용: %s\n", item.getDescription()));
-            prompt.append(String.format("   언론사: %s\n", item.getPublisher()));
-            
-            // 링크 정보 추가 (참고용)
-            if (item.getOriginallink() != null && !item.getOriginallink().isEmpty()) {
-                prompt.append(String.format("   원문링크: %s\n", item.getOriginallink()));
-            }
-            if (item.getLink() != null && !item.getLink().isEmpty()) {
-                prompt.append(String.format("   네이버링크: %s\n", item.getLink()));
-            }
+            prompt.append(String.format("%d. 내용: %s\n", i + 1, item.getDescription()));
             prompt.append("\n");
         }
         
         prompt.append("주의사항:\n");
-        prompt.append("- 위 요약 정보만을 바탕으로 스크립트를 작성하세요\n");
+        prompt.append("- 위 뉴스 내용만을 바탕으로 스크립트를 작성하세요\n");
         prompt.append("- 추가적인 정보를 추측하거나 생성하지 마세요\n");
+        prompt.append("- 제목, 언론사명, 링크 정보는 스크립트에 포함하지 마세요\n");
+        prompt.append("- 반드시 '안녕하십니까, [적절한 카테고리]에 관련된 내용입니다.'로 시작하세요\n");
         prompt.append("- 스크립트는 반드시 '이상입니다.'로 마무리해주세요");
         
         return prompt.toString();
@@ -296,7 +298,7 @@ public class NewsServiceImpl implements NewsService {
         try {
             // URL 인코딩된 form 데이터 형태로 구성
             String encodedText = java.net.URLEncoder.encode(script, "UTF-8");
-            return String.format("speaker=%s&text=%s&volume=0&speed=0&pitch=0&format=mp3", 
+            return String.format("speaker=%s&text=%s&volume=0&speed=-1&pitch=0&format=mp3",
                                 TTS_SPEAKER, encodedText);
         } catch (Exception e) {
             log.error("TTS 요청 본문 생성 중 오류 발생", e);

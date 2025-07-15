@@ -143,7 +143,7 @@ public class NewsController {
     @PostMapping("/tts")
     @Operation(
         summary = "TTS 음성 변환",
-        description = "스크립트를 Clova Dubbing을 사용해 다정한 목소리로 변환합니다."
+        description = "스크립트를 Clova Voice TTS를 사용해 다정한 목소리로 변환합니다."
     )
     public ResponseEntity<CommonResponse<String>> generateSpeech(
         @Parameter(description = "변환할 스크립트") @RequestParam String script

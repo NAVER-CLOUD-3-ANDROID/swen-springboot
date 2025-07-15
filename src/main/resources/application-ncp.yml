@@ -30,18 +30,6 @@ database:
 
 # NCP 특화 설정
 ncp:
-  region: ${NCP_REGION:KR}
-
-  # Object Storage 설정 (음성 파일 저장용)
-  object-storage:
-    endpoint: ${NCP_OBJECT_STORAGE_ENDPOINT}
-    access-key: ${NCP_ACCESS_KEY}
-    secret-key: ${NCP_SECRET_KEY}
-    bucket-name: ${NCP_BUCKET_NAME:news-audio-files}
-
-  # Cloud Functions 설정 (필요 시)
-  cloud-functions:
-    endpoint: ${NCP_CLOUD_FUNCTIONS_ENDPOINT}
 
   # VPC 설정
   vpc:
