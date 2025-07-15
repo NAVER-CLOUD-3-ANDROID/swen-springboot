@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 /**
  * 네이버 CLOVA Studio API 클라이언트입니다.
- * 문장생성(Chat Completions) API를 사용합니다.
+ * 문서: https://api.ncloud-docs.com/docs/clovastudio-chatcompletions
  */
 @FeignClient(
     name = "clova-studio-client", 
@@ -16,19 +16,19 @@ import org.springframework.web.bind.annotation.RequestHeader;
 public interface HyperClovaClient {
     
     /**
-     * CLOVA Studio 문장생성 API 호출
+     * CLOVA Studio Chat Completions API 호출
      * 
-     * @param apiKey X-NCP-CLOVASTUDIO-API-KEY
-     * @param apigwApiKey X-NCP-APIGW-API-KEY  
+     * @param authorization Bearer {API Key} 형식
      * @param requestId X-NCP-CLOVASTUDIO-REQUEST-ID
+     * @param contentType application/json
      * @param request 요청 본문
      * @return AI 응답
      */
-    @PostMapping
+    @PostMapping(consumes = "application/json", produces = "application/json")
     String generateScript(
-        @RequestHeader("X-NCP-CLOVASTUDIO-API-KEY") String apiKey,
-        @RequestHeader("X-NCP-APIGW-API-KEY") String apigwApiKey,
+        @RequestHeader("Authorization") String authorization,
         @RequestHeader("X-NCP-CLOVASTUDIO-REQUEST-ID") String requestId,
+        @RequestHeader("Content-Type") String contentType,
         @RequestBody String request
     );
 }

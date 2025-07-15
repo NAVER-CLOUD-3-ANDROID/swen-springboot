@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swen.news.domain.news.code.NewsErrorCode;
 import com.swen.news.domain.news.dto.*;
 import com.swen.news.domain.news.exception.NewsException;
-import com.swen.news.global.client.ClovaDubbingClient;
+import com.swen.news.global.client.ClovaVoiceClient;
 import com.swen.news.global.client.HyperClovaClient;
 import com.swen.news.global.client.NaverNewsClient;
 import lombok.RequiredArgsConstructor;
@@ -14,13 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +31,7 @@ public class NewsServiceImpl implements NewsService {
     
     private final NaverNewsClient naverNewsClient;
     private final HyperClovaClient hyperClovaClient;
-    private final ClovaDubbingClient clovaDubbingClient;
+    private final ClovaVoiceClient clovaVoiceClient;
     private final ObjectMapper objectMapper;
     
     // 고정 음성 설정 - 다정하고 깔끔한 톤
@@ -50,18 +46,15 @@ public class NewsServiceImpl implements NewsService {
     
     @Value("${external-api.naver.hyperclova.api-key}")
     private String hyperClovaApiKey;
-    
-    @Value("${external-api.naver.hyperclova.apigw-api-key}")
-    private String hyperClovaApigwApiKey;
-    
+
     @Value("${external-api.naver.hyperclova.request-id}")
     private String hyperClovaRequestId;
     
-    @Value("${external-api.naver.clova-dubbing.api-key-id}")
-    private String ncpAccessKeyId;
+    @Value("${external-api.naver.clova-voice.client-id}")
+    private String clovaVoiceClientId;
     
-    @Value("${external-api.naver.clova-dubbing.api-key}")
-    private String ncpSecretKey;
+    @Value("${external-api.naver.clova-voice.client-secret}")
+    private String clovaVoiceClientSecret;
     
     @Override
     public NewsScriptResponse playNews(PlayNewsRequest request) {
@@ -139,9 +132,9 @@ public class NewsServiceImpl implements NewsService {
             String requestBody = buildHyperClovaRequest(prompt);
             
             String response = hyperClovaClient.generateScript(
-                hyperClovaApiKey,
-                hyperClovaApigwApiKey,
+                "Bearer " + hyperClovaApiKey,  // Authorization: Bearer 형식
                 hyperClovaRequestId,
+                "application/json",             // Content-Type
                 requestBody
             );
             
@@ -156,24 +149,22 @@ public class NewsServiceImpl implements NewsService {
     @Override
     public String generateSpeech(String script) {
         try {
-            log.info("Clova Dubbing TTS 변환 시작");
+            log.info("CLOVA Voice TTS 변환 시작");
             
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            String signature = generateSignature(timestamp);
             String requestBody = buildTtsRequest(script);
             
-            String response = clovaDubbingClient.generateSpeech(
-                ncpAccessKeyId,
-                ncpSecretKey,
-                timestamp,
-                signature,
+            byte[] audioData = clovaVoiceClient.generateSpeech(
+                clovaVoiceClientId,
+                clovaVoiceClientSecret,
+                "application/x-www-form-urlencoded",
                 requestBody
             );
             
-            return extractAudioUrlFromResponse(response);
+            // 바이너리 데이터를 Base64로 인코딩하여 반환 (실제로는 파일 저장이나 URL 반환)
+            return "data:audio/mp3;base64," + java.util.Base64.getEncoder().encodeToString(audioData);
             
         } catch (Exception e) {
-            log.error("Clova Dubbing TTS 변환 중 오류 발생", e);
+            log.error("CLOVA Voice TTS 변환 중 오류 발생", e);
             throw new NewsException(NewsErrorCode.TTS_CONVERSION_FAILED);
         }
     }
@@ -246,7 +237,8 @@ public class NewsServiceImpl implements NewsService {
         prompt.append("- 중요한 정보를 명확하게 전달\n");
         prompt.append("- 듣기 좋은 속도와 리듬으로 작성\n");
         prompt.append("- 친근하면서도 정확한 정보 전달\n");
-        prompt.append("- 제공된 뉴스 요약 정보만 활용\n\n");
+        prompt.append("- 제공된 뉴스 요약 정보만 활용\n");
+        prompt.append("- 스크립트의 맨 마지막은 반드시 '이상입니다.'로 끝낼 것\n\n");
         
         prompt.append("뉴스 정보:\n");
         for (int i = 0; i < newsItems.size(); i++) {
@@ -265,7 +257,10 @@ public class NewsServiceImpl implements NewsService {
             prompt.append("\n");
         }
         
-        prompt.append("주의사항: 위 요약 정보만을 바탕으로 스크립트를 작성하세요. 추가적인 정보를 추측하거나 생성하지 마세요.");
+        prompt.append("주의사항:\n");
+        prompt.append("- 위 요약 정보만을 바탕으로 스크립트를 작성하세요\n");
+        prompt.append("- 추가적인 정보를 추측하거나 생성하지 마세요\n");
+        prompt.append("- 스크립트는 반드시 '이상입니다.'로 마무리해주세요");
         
         return prompt.toString();
     }
@@ -295,41 +290,17 @@ public class NewsServiceImpl implements NewsService {
     }
     
     /**
-     * TTS 요청 본문 생성
+     * CLOVA Voice TTS 요청 본문 생성 (form-encoded)
      */
-    private String buildTtsRequest(String script) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(
-            objectMapper.createObjectNode()
-                .put("text", script)
-                .put("speaker", TTS_SPEAKER)  // 고정 스피커
-                .put("volume", 0)
-                .put("speed", 0)
-                .put("pitch", 0)
-                .put("format", "mp3")
-        );
-    }
-    
-    /**
-     * NCP 인증 서명 생성
-     */
-    private String generateSignature(String timestamp) {
+    private String buildTtsRequest(String script) {
         try {
-            String space = " ";
-            String newLine = "\n";
-            String method = "POST";
-            String url = "/custom/v1/tts-premium/v1/tts";
-            
-            String message = method + space + url + newLine + timestamp + newLine + ncpAccessKeyId;
-            
-            SecretKeySpec signingKey = new SecretKeySpec(ncpSecretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(signingKey);
-            
-            byte[] rawHmac = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(rawHmac);
+            // URL 인코딩된 form 데이터 형태로 구성
+            String encodedText = java.net.URLEncoder.encode(script, "UTF-8");
+            return String.format("speaker=%s&text=%s&volume=0&speed=0&pitch=0&format=mp3", 
+                                TTS_SPEAKER, encodedText);
         } catch (Exception e) {
-            log.error("NCP 인증 서명 생성 중 오류 발생", e);
-            throw new NewsException(NewsErrorCode.CLOVA_DUBBING_API_ERROR);
+            log.error("TTS 요청 본문 생성 중 오류 발생", e);
+            throw new NewsException(NewsErrorCode.TTS_CONVERSION_FAILED);
         }
     }
     
@@ -366,23 +337,6 @@ public class NewsServiceImpl implements NewsService {
         } catch (Exception e) {
             log.error("CLOVA Studio 응답 파싱 중 오류 발생", e);
             throw new NewsException(NewsErrorCode.SCRIPT_GENERATION_FAILED);
-        }
-    }
-    
-    /**
-     * TTS 응답에서 오디오 URL 추출
-     */
-    private String extractAudioUrlFromResponse(String response) {
-        try {
-            JsonNode rootNode = objectMapper.readTree(response);
-            JsonNode audioUrlNode = rootNode.get("audioUrl");
-            if (audioUrlNode != null) {
-                return audioUrlNode.asText();
-            }
-            throw new NewsException(NewsErrorCode.TTS_CONVERSION_FAILED);
-        } catch (Exception e) {
-            log.error("TTS 응답 파싱 중 오류 발생", e);
-            throw new NewsException(NewsErrorCode.TTS_CONVERSION_FAILED);
         }
     }
     

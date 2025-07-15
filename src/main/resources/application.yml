@@ -51,11 +51,11 @@ external-api:
 
     hyperclova:
       api-key: ${NAVER_HYPERCLOVA_API_KEY}
-      apigw-api-key: ${NAVER_HYPERCLOVA_APIGW_API_KEY}
+      apigw-api-key: ${NCP_ACCESS_KEY}
       api-gateway-url: ${NAVER_HYPERCLOVA_API_GATEWAY_URL}
       request-id: ${NAVER_HYPERCLOVA_REQUEST_ID}
 
-    clova-dubbing:
-      base-url: ${NCP_TTS_BASE_URL}
-      api-key-id: ${NCP_ACCESS_KEY}
-      api-key: ${NCP_SECRET_KEY}
+    clova-voice:
+      url: ${CLOVA_VOICE_URL}
+      client-id: ${CLOVA_VOICE_CLIENT_ID}
+      client-secret: ${CLOVA_VOICE_CLIENT_SECRET}
