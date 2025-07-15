@@ -10,8 +10,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  *
  * <p>이 클래스는 스프링 부트 자동 설정을 활성화하며, JPA 감사 기능(@EnableJpaAuditing)을 사용하도록 설정합니다.
  */
-@SpringBootApplication
 @EnableJpaAuditing
+@SpringBootApplication
 public class NewsApplication {
 
 	/**
