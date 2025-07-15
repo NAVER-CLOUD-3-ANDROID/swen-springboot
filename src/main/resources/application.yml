@@ -10,6 +10,9 @@ spring:
       ncp:
         - ncp
 
+server:
+  port: 8080
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -56,6 +59,16 @@ external-api:
       request-id: ${NAVER_HYPERCLOVA_REQUEST_ID}
 
     clova-voice:
-      url: ${CLOVA_VOICE_URL}
+      url : ${CLOVA_VOICE_URL}
       client-id: ${CLOVA_VOICE_CLIENT_ID}
       client-secret: ${CLOVA_VOICE_CLIENT_SECRET}
+
+ncp:
+  region: ${NCP_REGION:KR}
+
+  # Object Storage 설정 (음성 파일 저장용)
+  object-storage:
+    endpoint: ${NCP_OBJECT_STORAGE_ENDPOINT}
+    access-key: ${NCP_ACCESS_KEY}
+    secret-key: ${NCP_SECRET_KEY}
+    bucket-name: ${NCP_BUCKET_NAME:obj-swen}

@@ -27,6 +27,7 @@ public enum NewsErrorCode implements BaseErrorCode {
     CLOVA_DUBBING_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_202", "Clova Dubbing API 호출 중 오류가 발생했습니다."),
     INVALID_VOICE_STYLE(HttpStatus.BAD_REQUEST, "NEWS_203", "유효하지 않은 음성 스타일입니다."),
     AUDIO_FILE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_204", "오디오 파일 저장에 실패했습니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_205", "파일 업로드에 실패했습니다."),
     
     // 일반 에러
     INVALID_REQUEST_FORMAT(HttpStatus.BAD_REQUEST, "NEWS_301", "잘못된 요청 형식입니다."),
