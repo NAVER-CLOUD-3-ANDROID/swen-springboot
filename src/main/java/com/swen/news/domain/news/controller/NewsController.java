@@ -5,6 +5,8 @@ import com.swen.news.domain.news.dto.NewsScriptResponse;
 import com.swen.news.domain.news.dto.PlayNewsRequest;
 import com.swen.news.domain.news.dto.NewsItem;
 import com.swen.news.domain.news.service.NewsService;
+import com.swen.news.domain.news.service.NewsRecommendationService;
+import com.swen.news.domain.news.batch.NewsEmbeddingBatchService;
 import com.swen.news.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,6 +31,8 @@ import java.util.List;
 public class NewsController {
     
     private final NewsService newsService;
+    private final NewsRecommendationService newsRecommendationService;
+    private final NewsEmbeddingBatchService newsEmbeddingBatchService;
     
     /**
      * 간편한 랜덤 뉴스 플레이 (GET 방식)
@@ -152,6 +156,56 @@ public class NewsController {
         
         String audioUrl = newsService.generateSpeech(script);
         return ResponseEntity.ok(CommonResponse.onSuccess(HttpStatus.OK.value(), audioUrl));
+    }
+    
+    /**
+     * 관련 뉴스 추천 API
+     */
+    @PostMapping("/recommendations")
+    @Operation(
+        summary = "관련 뉴스 추천",
+        description = "현재 뉴스와 관련된 뉴스들을 RAG 기반으로 추천합니다."
+    )
+    public ResponseEntity<CommonResponse<List<NewsItem>>> getRecommendations(
+        @Parameter(description = "뉴스 제목") @RequestParam String title,
+        @Parameter(description = "뉴스 내용") @RequestParam String description,
+        @Parameter(description = "언론사") @RequestParam(defaultValue = "뉴스") String publisher,
+        @Parameter(description = "뉴스 링크") @RequestParam String link
+    ) {
+        log.info("뉴스 추천 요청 - 제목: {}", title);
+        
+        NewsItem currentNews = NewsItem.builder()
+            .title(title)
+            .description(description)
+            .publisher(publisher)
+            .link(link)
+            .pubDate(LocalDateTime.now())
+            .build();
+        
+        List<NewsItem> recommendations = newsRecommendationService.findSimilarNewsByContent(currentNews);
+        return ResponseEntity.ok(CommonResponse.onSuccess(HttpStatus.OK.value(), recommendations));
+    }
+    
+    /**
+     * 뉴스 임베딩 배치 작업 수동 실행 (관리자용)
+     */
+    @PostMapping("/admin/embedding/batch")
+    @Operation(
+        summary = "뉴스 임베딩 배치 작업 수동 실행",
+        description = "관리자용 API로 최신 뉴스를 수집하여 임베딩을 생성합니다."
+    )
+    public ResponseEntity<CommonResponse<String>> runEmbeddingBatch() {
+        log.info("뉴스 임베딩 배치 작업 수동 실행 요청");
+        
+        try {
+            newsEmbeddingBatchService.collectAndEmbedLatestNews();
+            String message = "뉴스 임베딩 배치 작업이 시작되었습니다. 백그라운드에서 처리됩니다.";
+            return ResponseEntity.ok(CommonResponse.onSuccess(HttpStatus.OK.value(), message));
+        } catch (Exception e) {
+            log.error("뉴스 임베딩 배치 작업 실행 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(CommonResponse.onFailure(HttpStatus.INTERNAL_SERVER_ERROR.value(), "배치 작업 실행에 실패했습니다."));
+        }
     }
     
     /**

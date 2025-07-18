@@ -87,6 +87,9 @@ external-api:
       apigw-api-key: ${NCP_ACCESS_KEY}
       api-gateway-url: ${NAVER_HYPERCLOVA_API_GATEWAY_URL}
       request-id: ${NAVER_HYPERCLOVA_REQUEST_ID}
+      embedding-url: ${NAVER_HYPERCLOVA_EMBEDDING_URL}
+      embedding-api-key: ${NAVER_HYPERCLOVA_API_KEY}
+      embedding-request-id: ${NAVER_HYPERCLOVA_EMBEDDING_REQUEST_ID}
 
     clova-voice:
       url : ${CLOVA_VOICE_URL}
@@ -102,3 +105,14 @@ ncp:
     access-key: ${NCP_ACCESS_KEY}
     secret-key: ${NCP_SECRET_KEY}
     bucket-name: ${NCP_BUCKET_NAME:obj-swen}
+
+# RAG 벡터 데이터베이스 설정
+vector-db:
+  similarity-threshold: 0.6  # 유사도 임계값 (0.6 이상만 추천)
+  max-recommendations: 5     # 최대 추천 개수
+
+# 스케줄러 설정
+scheduler:
+  news-embedding:
+    enabled: true           # 스케줄러 활성화 여부
+    initial-run: true      # 앱 시작시 초기 실행 여부 (개발환경에서만 true)
