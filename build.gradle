@@ -67,6 +67,9 @@ dependencies {
 	// OAuth2 및 Spring Security 의존성 추가
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// 벡터 연산용
+	implementation 'org.apache.commons:commons-math3:3.6.1'
 }
 
 dependencyManagement {

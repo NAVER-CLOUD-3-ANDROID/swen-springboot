@@ -29,6 +29,11 @@ public enum NewsErrorCode implements BaseErrorCode {
     AUDIO_FILE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_204", "오디오 파일 저장에 실패했습니다."),
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_205", "파일 업로드에 실패했습니다."),
     
+    // 임베딩 및 추천 관련 에러
+    EMBEDDING_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_401", "임베딩 생성에 실패했습니다."),
+    VECTOR_SIMILARITY_CALCULATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_402", "벡터 유사도 계산에 실패했습니다."),
+    NEWS_RECOMMENDATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NEWS_403", "뉴스 추천에 실패했습니다."),
+    
     // 일반 에러
     INVALID_REQUEST_FORMAT(HttpStatus.BAD_REQUEST, "NEWS_301", "잘못된 요청 형식입니다."),
     EXTERNAL_API_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "NEWS_302", "외부 API 서비스를 사용할 수 없습니다.");

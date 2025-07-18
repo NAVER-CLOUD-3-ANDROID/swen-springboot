@@ -45,4 +45,9 @@ public class NewsScriptResponse {
      * 생성 시간
      */
     private String createdAt;
+    
+    /**
+     * 추천된 관련 뉴스 목록
+     */
+    private List<NewsItem> recommendedNews;
 }
