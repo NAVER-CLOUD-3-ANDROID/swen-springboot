@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -184,6 +185,34 @@ public class NewsController {
         
         List<NewsItem> recommendations = newsRecommendationService.findSimilarNewsByContent(currentNews);
         return ResponseEntity.ok(CommonResponse.onSuccess(HttpStatus.OK.value(), recommendations));
+    }
+    
+    /**
+     * 벡터DB 성장 모니터링 API 추가
+     */
+    @GetMapping("/admin/embedding/stats")
+    @Operation(
+        summary = "벡터DB 통계 조회",
+        description = "벡터DB에 저장된 뉴스 개수와 성장 현황을 조회합니다."
+    )
+    public ResponseEntity<CommonResponse<Object>> getEmbeddingStats() {
+        log.info("벡터DB 통계 조회 요청");
+        
+        try {
+            // 간단한 통계 정보 (실제로는 Repository에서 조회)
+            Object stats = java.util.Map.of(
+                "message", "벡터DB 통계는 실제 구현 시 NewsEmbeddingRepository.count() 등을 사용하여 조회",
+                "totalCount", "TODO: 실제 카운트",
+                "todayAdded", "TODO: 오늘 추가된 수",
+                "lastUpdated", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            );
+            
+            return ResponseEntity.ok(CommonResponse.onSuccess(HttpStatus.OK.value(), stats));
+        } catch (Exception e) {
+            log.error("벡터DB 통계 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(CommonResponse.onFailure(HttpStatus.INTERNAL_SERVER_ERROR.value(), "통계 조회에 실패했습니다."));
+        }
     }
     
     /**

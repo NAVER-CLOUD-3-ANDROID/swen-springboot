@@ -28,6 +28,7 @@ public class NewsRecommendationServiceImpl implements NewsRecommendationService 
 
     private final EmbeddingService embeddingService;
     private final NewsEmbeddingRepository newsEmbeddingRepository;
+    private final FallbackRecommendationService fallbackRecommendationService;
     private final ObjectMapper objectMapper;
 
     @Value("${vector-db.similarity-threshold:0.7}")
@@ -53,22 +54,44 @@ public class NewsRecommendationServiceImpl implements NewsRecommendationService 
                 .filter(embedding -> !embedding.getNewsUrl().equals(currentNews.getLink()))
                 .collect(Collectors.toList());
 
-            // 4. 유사도 계산 및 정렬
+            // 4. 벡터DB가 비어있으면 Fallback 전략 사용
+            if (candidateEmbeddings.isEmpty()) {
+                log.info("벡터DB가 비어있음 - Fallback 전략으로 실시간 뉴스 검색");
+                return fallbackRecommendationService.getFallbackRecommendations(currentNews, maxRecommendations);
+            }
+
+            // 5. 유사도 계산 및 정렬
             List<VectorSimilarityDto> similarities = calculateSimilarities(
                 scriptEmbedding.getEmbedding(), candidateEmbeddings
             );
 
-            // 5. 임계값 이상의 유사도를 가진 뉴스들만 필터링
-            return similarities.stream()
+            // 6. 임계값 이상의 유사도를 가진 뉴스들만 필터링
+            List<NewsItem> recommendations = similarities.stream()
                 .filter(sim -> sim.getSimilarity() >= similarityThreshold)
                 .limit(maxRecommendations)
                 .map(VectorSimilarityDto::getNewsItem)
                 .collect(Collectors.toList());
 
+            // 7. 추천 결과가 부족하면 Fallback으로 보완
+            if (recommendations.size() < 3) {
+                log.info("추천 결과 부족 ({}/5) - Fallback으로 보완", recommendations.size());
+                List<NewsItem> fallbackNews = fallbackRecommendationService.getFallbackRecommendations(
+                    currentNews, maxRecommendations - recommendations.size()
+                );
+                
+                // 중복 제거하면서 추가
+                fallbackNews.stream()
+                    .filter(news -> recommendations.stream()
+                        .noneMatch(existing -> existing.getLink().equals(news.getLink())))
+                    .forEach(recommendations::add);
+            }
+
+            return recommendations;
+
         } catch (Exception e) {
             log.error("스크립트 기반 뉴스 추천 중 오류 발생", e);
-            // 추천 실패 시 빈 리스트 반환 (전체 서비스 영향 최소화)
-            return new ArrayList<>();
+            // 오류 시에도 Fallback 추천 시도
+            return fallbackRecommendationService.getFallbackRecommendations(currentNews, maxRecommendations);
         }
     }
 
@@ -98,7 +121,7 @@ public class NewsRecommendationServiceImpl implements NewsRecommendationService 
 
         } catch (Exception e) {
             log.error("콘텐츠 기반 뉴스 추천 중 오류 발생", e);
-            return new ArrayList<>();
+            return fallbackRecommendationService.getFallbackRecommendations(currentNews, maxRecommendations);
         }
     }
 

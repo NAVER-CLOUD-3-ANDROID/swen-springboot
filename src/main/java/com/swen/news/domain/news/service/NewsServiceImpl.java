@@ -97,7 +97,19 @@ public class NewsServiceImpl implements NewsService {
             // 6. 관련 뉴스 추천
             List<NewsItem> recommendedNews = newsRecommendationService.findSimilarNewsByScript(script, newsItems.get(0));
 
-            // 7. 응답 생성
+            // 🚀 7. 추천된 뉴스들도 벡터DB에 저장 (학습 효과)
+            if (!recommendedNews.isEmpty()) {
+                try {
+                    for (NewsItem recommended : recommendedNews) {
+                        embeddingService.saveNewsEmbedding(recommended);
+                    }
+                    log.info("추천 뉴스 {}건 벡터DB 저장 요청 완료", recommendedNews.size());
+                } catch (Exception e) {
+                    log.warn("추천 뉴스 벡터DB 저장 실패: {}", e.getMessage());
+                }
+            }
+
+            // 8. 응답 생성
             return NewsScriptResponse.builder()
                     .scriptId(UUID.randomUUID().toString())
                     .script(script)
