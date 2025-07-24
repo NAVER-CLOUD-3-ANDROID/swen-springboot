@@ -26,6 +26,15 @@ public class User extends BaseTimeEntity {
     @Column(name = "nickname")
     private String nickname;
 
+    @Column(name = "gender", length = 1)
+    private String gender; // "M", "F"
+
+    @Column(name = "mobile", length = 20)
+    private String mobile; // "010-1234-5678"
+
+    @Column(name = "birthday", length = 20)
+    private String birthday; // "10-15"
+
     // OAuth 관련 필드
     @Column(name = "provider")
     private String provider; // "naver", "google" 등

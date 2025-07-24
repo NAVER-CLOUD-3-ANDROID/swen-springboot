@@ -1,8 +1,12 @@
 package com.swen.news.global.config;
 
+import com.swen.news.domain.user.entity.RefreshToken;
 import com.swen.news.domain.user.entity.User;
+import com.swen.news.domain.user.service.RefreshTokenService;
 import com.swen.news.domain.user.service.UserService;
 import com.swen.news.domain.user.exception.UserServiceException;
+import com.swen.news.global.jwt.JwtProvider;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,16 +25,18 @@ import java.util.Map;
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserService userService;
+    private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, 
                                       HttpServletResponse response,
                                       Authentication authentication) throws IOException {
         
-        log.info("=== OAuth2 로그인 성공 핸들러 시작 ===");
-        log.info("Request URI: {}", request.getRequestURI());
-        log.info("Request URL: {}", request.getRequestURL());
-        log.info("Authentication: {}", authentication.getClass().getSimpleName());
+//        log.info("=== OAuth2 로그인 성공 핸들러 시작 ===");
+//        log.info("Request URI: {}", request.getRequestURI());
+//        log.info("Request URL: {}", request.getRequestURL());
+//        log.info("Authentication: {}", authentication.getClass().getSimpleName());
         
         try {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -55,6 +61,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             String name = (String) responseMap.get("name");
             String nickname = (String) responseMap.get("nickname");
             String profileImage = (String) responseMap.get("profile_image");
+            String gender = (String) responseMap.get("gender");
+            String birthday = (String) responseMap.get("birthday");
+            String mobile = (String) responseMap.get("mobile");
 
             log.info("OAuth2 로그인 성공 - Provider: {}, ProviderId: {}, Email: {}", provider, providerId, email);
 
@@ -66,12 +75,19 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             }
 
             // 사용자 정보 저장 또는 업데이트
-            User user = userService.processOAuthUser(provider, providerId, email, name, nickname, profileImage);
+            User user = userService.processOAuthUser(provider, providerId, email, name, nickname, profileImage, gender, birthday, mobile);
             
             log.info("사용자 처리 완료 - UserId: {}", user.getId());
             
             // TODO: JWT 토큰 생성 로직 추가 시 활성화
-            // String accessToken = jwtTokenProvider.createAccessToken(user.getId());
+            String accessToken = jwtProvider.createAccessToken(String.valueOf(user.getId()));
+
+            // 2. RefreshToken 생성 및 DB 저장
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+            // 3. 클라이언트에 전달
+            response.addCookie(createCookie("accessToken", accessToken));
+            response.addCookie(createCookie("refreshToken", refreshToken.getToken()));
             
             // 임시로 성공 메시지 표시 (프론트엔드 없이 테스트)
             response.setContentType("text/html; charset=UTF-8");
@@ -84,12 +100,26 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     <p><strong>이름:</strong> %s</p>
                     <p><strong>이메일:</strong> %s</p>
                     <p><strong>닉네임:</strong> %s</p>
+                    <p><strong>프로필 사진:</strong> %s</p>
+                    <p><strong>성별:</strong> %s</p>
+                    <p><strong>휴대전화번호:</strong> %s</p>
+                    <p><strong>생일:</strong> %s</p>
                     <hr>
                     <p><a href="/api/auth/user/%d">사용자 정보 조회</a></p>
                     <p><a href="/swagger-ui.html">API 문서</a></p>
                 </body>
                 </html>
-                """.formatted(user.getId(), name, email, nickname, user.getId()));
+                """.formatted(
+                    user.getId(),               // 사용자 ID (%d)
+                    user.getName(),             // 이름 (%s)
+                    user.getEmail(),            // 이메일 (%s)
+                    user.getNickname(),         // 닉네임 (%s)
+                    user.getProfileImageUrl(),  // 프로필 사진 (%s)
+                    user.getGender(),           // 성별 (%s)
+                    user.getBirthday(),         // 생일 (%s)
+                    user.getMobile(),           // 휴대전화번호 (%s)
+                    user.getId()                // URL의 사용자 ID (%d)
+                    ));
             
         } catch (UserServiceException e) {
             log.error("OAuth2 로그인 처리 중 사용자 서비스 오류 발생: {}", e.getMessage(), e);
@@ -98,5 +128,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             log.error("OAuth2 로그인 처리 중 예상치 못한 오류 발생: {}", e.getMessage(), e);
             response.sendRedirect("http://localhost:3000/login?error=unknown_error");
         }
+    }
+
+    private Cookie createCookie(String name, String value) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true);  // XSS 공격 방지
+        cookie.setSecure(false);   // 개발환경에서는 false, 운영환경에서는 true
+        cookie.setPath("/");       // 전체 경로에서 사용
+        cookie.setMaxAge(7 * 24 * 60 * 60); // 7일 (초 단위)
+        return cookie;
     }
 }
