@@ -15,11 +15,14 @@ import java.time.LocalDateTime;
 public class UserResponseDto {
     
     private Long id;
-    private String email;
     private String name;
+    private String email;
     private String nickname;
-    private String provider;
     private String profileImageUrl;
+    private String gender;
+    private String birthday;
+    private String mobile;
+    private String provider;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -27,11 +30,14 @@ public class UserResponseDto {
     public static UserResponseDto from(User user) {
         return UserResponseDto.builder()
                 .id(user.getId())
-                .email(user.getEmail())
                 .name(user.getName())
+                .email(user.getEmail())
                 .nickname(user.getNickname())
-                .provider(user.getProvider())
                 .profileImageUrl(user.getProfileImageUrl())
+                .gender(user.getGender())
+                .birthday(user.getBirthday())
+                .mobile(user.getMobile())
+                .provider(user.getProvider())
                 .isActive(user.getIsActive())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
