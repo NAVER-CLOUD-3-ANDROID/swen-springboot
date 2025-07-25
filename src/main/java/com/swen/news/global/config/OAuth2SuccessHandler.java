@@ -33,10 +33,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                                       HttpServletResponse response,
                                       Authentication authentication) throws IOException {
         
-//        log.info("=== OAuth2 로그인 성공 핸들러 시작 ===");
-//        log.info("Request URI: {}", request.getRequestURI());
-//        log.info("Request URL: {}", request.getRequestURL());
-//        log.info("Authentication: {}", authentication.getClass().getSimpleName());
+        log.info("=== OAuth2 로그인 성공 핸들러 시작 ===");
+        log.info("Request URI: {}", request.getRequestURI());
+        log.info("Request URL: {}", request.getRequestURL());
+        log.info("Authentication: {}", authentication.getClass().getSimpleName());
         
         try {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -88,38 +88,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             // 3. 클라이언트에 전달
             response.addCookie(createCookie("accessToken", accessToken));
             response.addCookie(createCookie("refreshToken", refreshToken.getToken()));
-            
-            // 임시로 성공 메시지 표시 (프론트엔드 없이 테스트)
-            response.setContentType("text/html; charset=UTF-8");
-            response.getWriter().write("""
-                <html>
-                <head><title>로그인 성공</title></head>
-                <body>
-                    <h2>🎉 네이버 로그인 성공!</h2>
-                    <p><strong>사용자 ID:</strong> %d</p>
-                    <p><strong>이름:</strong> %s</p>
-                    <p><strong>이메일:</strong> %s</p>
-                    <p><strong>닉네임:</strong> %s</p>
-                    <p><strong>프로필 사진:</strong> %s</p>
-                    <p><strong>성별:</strong> %s</p>
-                    <p><strong>휴대전화번호:</strong> %s</p>
-                    <p><strong>생일:</strong> %s</p>
-                    <hr>
-                    <p><a href="/api/auth/user/%d">사용자 정보 조회</a></p>
-                    <p><a href="/swagger-ui.html">API 문서</a></p>
-                </body>
-                </html>
-                """.formatted(
-                    user.getId(),               // 사용자 ID (%d)
-                    user.getName(),             // 이름 (%s)
-                    user.getEmail(),            // 이메일 (%s)
-                    user.getNickname(),         // 닉네임 (%s)
-                    user.getProfileImageUrl(),  // 프로필 사진 (%s)
-                    user.getGender(),           // 성별 (%s)
-                    user.getBirthday(),         // 생일 (%s)
-                    user.getMobile(),           // 휴대전화번호 (%s)
-                    user.getId()                // URL의 사용자 ID (%d)
-                    ));
+
+            // 클라이언트 측 메인 페이지로 리다이렉트
+            response.sendRedirect("http://localhost:3000/#/main");
             
         } catch (UserServiceException e) {
             log.error("OAuth2 로그인 처리 중 사용자 서비스 오류 발생: {}", e.getMessage(), e);
