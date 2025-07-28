@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swen-app
+  labels:
+    app: swen-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: swen-app
+  template:
+    metadata:
+      labels:
+        app: swen-app
+    spec:
+      imagePullSecrets:
+      - name: ncp-registry-secret
+      containers:
+      - name: swen-app
+        image: swen-rg.kr.ncr.ntruss.com/swen:latest
+        ports:
+        - containerPort: 8080
+        env:
+          - name: SPRING_PROFILES_ACTIVE
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: SPRING_PROFILES_ACTIVE
+          - name: NAVER_CLIENT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: NAVER_CLIENT_ID
+          - name: NAVER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_CLIENT_SECRET
+          - name: NAVER_OAUTH_CLIENT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: NAVER_OAUTH_CLIENT_ID
+          - name: NAVER_OAUTH_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_OAUTH_CLIENT_SECRET
+          - name: NAVER_OAUTH_REDIRECT_URI
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_OAUTH_REDIRECT_URI
+          - name: NAVER_HYPERCLOVA_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_HYPERCLOVA_API_KEY
+          - name: NAVER_HYPERCLOVA_API_GATEWAY_URL
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_HYPERCLOVA_API_GATEWAY_URL
+          - name: NAVER_HYPERCLOVA_REQUEST_ID
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_HYPERCLOVA_REQUEST_ID
+          - name: NAVER_HYPERCLOVA_EMBEDDING_URL
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_HYPERCLOVA_EMBEDDING_URL
+          - name: NAVER_HYPERCLOVA_EMBEDDING_REQUEST_ID
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NAVER_HYPERCLOVA_EMBEDDING_REQUEST_ID
+          - name: CLOVA_VOICE_URL
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: CLOVA_VOICE_URL
+          - name: CLOVA_VOICE_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: CLOVA_VOICE_CLIENT_ID
+          - name: CLOVA_VOICE_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: CLOVA_VOICE_CLIENT_SECRET
+          - name: NCP_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NCP_ACCESS_KEY
+          - name: NCP_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NCP_SECRET_KEY
+          - name: NCP_OBJECT_STORAGE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NCP_OBJECT_STORAGE_ENDPOINT
+          - name: NCP_DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: NCP_DB_HOST
+          - name: NCP_DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: NCP_DB_NAME
+          - name: NCP_DB_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: NCP_DB_USERNAME
+          - name: NCP_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: swen-secret
+                key: NCP_DB_PASSWORD
+          - name: NCP_PRIVATE_SUBNET
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: NCP_PRIVATE_SUBNET
+          - name: NCP_SECURITY_GROUP
+            valueFrom:
+              configMapKeyRef:
+                name: swen-config
+                key: NCP_SECURITY_GROUP
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swen-app-service
+spec:
+  selector:
+    app: swen-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer 
