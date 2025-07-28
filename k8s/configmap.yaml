@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swen-config
+data:
+  SPRING_PROFILES_ACTIVE: "ncp"
+  NCP_DB_NAME: "dbswen"
+  NCP_DB_USERNAME: "swen"
+  NCP_PRIVATE_SUBNET: "10.0.1.0/24"
+  NCP_SECURITY_GROUP: "nsg-news-app" 
