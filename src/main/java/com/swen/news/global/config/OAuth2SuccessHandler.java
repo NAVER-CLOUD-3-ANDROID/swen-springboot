@@ -1,8 +1,12 @@
 package com.swen.news.global.config;
 
+import com.swen.news.domain.user.entity.RefreshToken;
 import com.swen.news.domain.user.entity.User;
+import com.swen.news.domain.user.service.RefreshTokenService;
 import com.swen.news.domain.user.service.UserService;
 import com.swen.news.domain.user.exception.UserServiceException;
+import com.swen.news.global.jwt.JwtProvider;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,8 @@ import java.util.Map;
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserService userService;
+    private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, 
@@ -55,6 +61,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             String name = (String) responseMap.get("name");
             String nickname = (String) responseMap.get("nickname");
             String profileImage = (String) responseMap.get("profile_image");
+            String gender = (String) responseMap.get("gender");
+            String birthday = (String) responseMap.get("birthday");
+            String mobile = (String) responseMap.get("mobile");
 
             log.info("OAuth2 로그인 성공 - Provider: {}, ProviderId: {}, Email: {}", provider, providerId, email);
 
@@ -66,30 +75,22 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             }
 
             // 사용자 정보 저장 또는 업데이트
-            User user = userService.processOAuthUser(provider, providerId, email, name, nickname, profileImage);
+            User user = userService.processOAuthUser(provider, providerId, email, name, nickname, profileImage, gender, birthday, mobile);
             
             log.info("사용자 처리 완료 - UserId: {}", user.getId());
             
             // TODO: JWT 토큰 생성 로직 추가 시 활성화
-            // String accessToken = jwtTokenProvider.createAccessToken(user.getId());
-            
-            // 임시로 성공 메시지 표시 (프론트엔드 없이 테스트)
-            response.setContentType("text/html; charset=UTF-8");
-            response.getWriter().write("""
-                <html>
-                <head><title>로그인 성공</title></head>
-                <body>
-                    <h2>🎉 네이버 로그인 성공!</h2>
-                    <p><strong>사용자 ID:</strong> %d</p>
-                    <p><strong>이름:</strong> %s</p>
-                    <p><strong>이메일:</strong> %s</p>
-                    <p><strong>닉네임:</strong> %s</p>
-                    <hr>
-                    <p><a href="/api/auth/user/%d">사용자 정보 조회</a></p>
-                    <p><a href="/swagger-ui.html">API 문서</a></p>
-                </body>
-                </html>
-                """.formatted(user.getId(), name, email, nickname, user.getId()));
+            String accessToken = jwtProvider.createAccessToken(String.valueOf(user.getId()));
+
+            // 2. RefreshToken 생성 및 DB 저장
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+            // 3. 클라이언트에 전달
+            response.addCookie(createCookie("accessToken", accessToken));
+            response.addCookie(createCookie("refreshToken", refreshToken.getToken()));
+
+            // 클라이언트 측 메인 페이지로 리다이렉트
+            response.sendRedirect("http://localhost:3000/#/main");
             
         } catch (UserServiceException e) {
             log.error("OAuth2 로그인 처리 중 사용자 서비스 오류 발생: {}", e.getMessage(), e);
@@ -98,5 +99,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             log.error("OAuth2 로그인 처리 중 예상치 못한 오류 발생: {}", e.getMessage(), e);
             response.sendRedirect("http://localhost:3000/login?error=unknown_error");
         }
+    }
+
+    private Cookie createCookie(String name, String value) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true);  // XSS 공격 방지
+        cookie.setSecure(false);   // 개발환경에서는 false, 운영환경에서는 true
+        cookie.setPath("/");       // 전체 경로에서 사용
+        cookie.setMaxAge(7 * 24 * 60 * 60); // 7일 (초 단위)
+        return cookie;
     }
 }

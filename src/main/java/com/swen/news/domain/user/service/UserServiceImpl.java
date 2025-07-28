@@ -1,6 +1,8 @@
 package com.swen.news.domain.user.service;
 
 import com.swen.news.domain.user.entity.User;
+import com.swen.news.domain.user.entity.RefreshToken;
+import com.swen.news.domain.user.repository.RefreshTokenRepository;
 import com.swen.news.domain.user.repository.UserRepository;
 import com.swen.news.domain.user.exception.InvalidUserDataException;
 import com.swen.news.domain.user.exception.UserNotFoundException;
@@ -23,15 +25,18 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
+    private final RefreshTokenRepository refreshTokenRepository;
+
     @Override
     public User processOAuthUser(String provider, String providerId, String email, 
-                               String name, String nickname, String profileImage) {
+                               String name, String nickname, String profileImage,
+                                 String gender, String mobile, String birthday ) {
         
         log.info("OAuth 사용자 처리 시작 - Provider: {}, ProviderId: {}, Email: {}", provider, providerId, email);
         
         try {
             // 입력 데이터 유효성 검증
-            validateOAuthUserData(provider, providerId, email, name);
+            validateOAuthUserData(provider, providerId, email, name, gender, birthday, mobile);
             
             // 기존 사용자 확인 (provider + providerId로)
             Optional<User> existingUser = userRepository.findByProviderAndProviderId(provider, providerId);
@@ -39,14 +44,14 @@ public class UserServiceImpl implements UserService {
             if (existingUser.isPresent()) {
                 // 기존 사용자 정보 업데이트
                 User user = existingUser.get();
-                updateUserInfo(user, name, nickname, profileImage);
+                updateUserInfo(user, email, name, nickname, profileImage, gender, mobile, birthday);
                 
                 User savedUser = userRepository.save(user);
                 log.info("기존 사용자 정보 업데이트 완료 - UserId: {}", savedUser.getId());
                 return savedUser;
             } else {
                 // 새 사용자 생성
-                User newUser = createNewUser(provider, providerId, email, name, nickname, profileImage);
+                User newUser = createNewUser(name, email, nickname, profileImage, gender, birthday, mobile, provider, providerId);
                 User savedUser = userRepository.save(newUser);
                 log.info("새 사용자 생성 완료 - UserId: {}", savedUser.getId());
                 return savedUser;
@@ -169,17 +174,24 @@ public class UserServiceImpl implements UserService {
             throw new UserServiceException("이메일 존재 여부 확인 중 데이터베이스 오류가 발생했습니다.", e);
         }
     }
-    
+
     // Private 헬퍼 메서드들
-    
-    private void validateOAuthUserData(String provider, String providerId, String email, String name) {
+    // provider, providerId, email, name, gender, birthday, mobile
+    private void validateOAuthUserData(String provider, String providerId, String email, String name, String gender, String birthday, String mobile) {
         UserValidator.validateProvider(provider);
         UserValidator.validateProviderId(providerId);
         // email은 선택사항이므로 검증하지 않음
         UserValidator.validateName(name);
     }
     
-    private void updateUserInfo(User user, String name, String nickname, String profileImage) {
+    private void updateUserInfo(User user, String email, String name, String nickname, String profileImage, String gender, String mobile, String birthday) {
+        log.info("updateUserInfo 호출 - UserId: {}, 현재 상태 [Name: {}, Nickname: {}, ProfileImage: {}, gender : {}, mobile: {}, birthday : {}]",
+                user.getId(), user.getName(), user.getNickname(), user.getProfileImageUrl(), user.getGender(), user.getMobile(), user.getBirthday());
+        log.info("업데이트 요청 파라미터 - Name: {}, Nickname: {}, ProfileImage: {}, gender: {}, mobile: {}, birthday : {}",
+                name, nickname, profileImage, gender, mobile, birthday);
+
+        if (StringUtils.hasText(email)) user.setEmail(email);
+
         if (StringUtils.hasText(name)) {
             UserValidator.validateName(name);
             user.setName(name);
@@ -191,18 +203,62 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.hasText(profileImage)) {
             user.setProfileImageUrl(profileImage);
         }
+        if (StringUtils.hasText(gender)) {
+            user.setGender(gender);
+        }
+        if (StringUtils.hasText(mobile)) {
+            user.setMobile(mobile);
+        }
+        if (StringUtils.hasText(birthday) && !"00-00".equals(birthday)) {
+            user.setBirthday(birthday);
+        }
     }
     
-    private User createNewUser(String provider, String providerId, String email, 
-                             String name, String nickname, String profileImage) {
+    private User createNewUser(String name, String email, String nickname,
+                             String profileImage, String gender, String birthday,
+                            String mobile, String provider, String providerId) {
+
         return User.builder()
-                .email(email)
                 .name(name)
+                .email(email)
                 .nickname(nickname)
+                .profileImageUrl(profileImage)
+                .gender(gender)
+                .birthday(birthday)
+                .mobile(mobile)
                 .provider(provider)
                 .providerId(providerId)
-                .profileImageUrl(profileImage)
                 .isActive(true)
                 .build();
     }
+
+    public void saveRefreshToken(Long userId, String refreshToken) {
+        // 예시: RefreshToken 엔티티 활용 (userId, refreshToken, 만료일 ...)
+        RefreshToken token = RefreshToken.builder()
+                .userId(userId)
+                .token(refreshToken)
+                .build();
+        refreshTokenRepository.save(token);
+    }
+
+    public User findByRefreshToken(String refreshToken) {
+        RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+        // 토큰에서 userId로 사용자 조회
+        return userRepository.findById(token.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Override
+    public User createSocialUser(String email, String nickname) {
+        // 실제 유저 생성 로직 구현
+        // 예시:
+        User user = User.builder()
+                .email(email)
+                .nickname(nickname)
+                .provider("naver")
+                .build();
+        return userRepository.save(user);
+    }
+
 }

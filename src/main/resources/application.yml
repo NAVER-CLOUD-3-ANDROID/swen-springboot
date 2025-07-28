@@ -68,12 +68,16 @@ feign:
 # 로깅 설정
 logging:
   level:
-    com.swen.news.global.client: DEBUG
+#    com.swen.news.global.client: DEBUG
+    com.swen.news: DEBUG # 로그인 로깅 확인 후 삭제 예정
     feign: DEBUG
     org.springframework.security: DEBUG
     org.springframework.security.oauth2: DEBUG
     org.springframework.web: DEBUG
     root: INFO
+
+  pattern: # 로그인 로깅 확인 후 삭제 예정
+    console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n" # 로그인 로깅 확인 후 삭제 예정
 
 external-api:
   naver:
@@ -116,3 +120,6 @@ scheduler:
   news-embedding:
     enabled: true           # 스케줄러 활성화 여부
     initial-run: true      # 앱 시작시 초기 실행 여부 (개발환경에서만 true)
+
+jwt:
+  secret: ${NAVER_JWT_SECRET}
