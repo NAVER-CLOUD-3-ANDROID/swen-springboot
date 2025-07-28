@@ -38,3 +38,7 @@ out/
 
 ### Source ###
 .env
+ncp-iam-authenticator
+kubeconfig.yaml
+kube-ops-view/
+swen_deploy.sh

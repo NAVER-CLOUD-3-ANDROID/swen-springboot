@@ -4,6 +4,12 @@ spring:
     activate:
       on-profile: ncp
 
+  datasource:
+    url: jdbc:mysql://${NCP_DB_HOST}:${NCP_DB_PORT:3306}/${NCP_DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${NCP_DB_USERNAME}
+    password: ${NCP_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update  # 운영 시에는 validate
