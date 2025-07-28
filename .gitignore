@@ -45,4 +45,3 @@ swen_deploy.sh
 
 # Kubernetes secrets
 k8s/secret.yaml
-k8s/encode_secrets.sh

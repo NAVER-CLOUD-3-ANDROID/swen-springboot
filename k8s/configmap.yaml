@@ -4,9 +4,6 @@ metadata:
   name: swen-config
 data:
   SPRING_PROFILES_ACTIVE: "ncp"
-  NAVER_CLIENT_ID: "9ucoOTZoJ8hJGqmVleuX"
-  NAVER_OAUTH_CLIENT_ID: "E5bgwo_wmURw9dPqnKaW"
-  NCP_DB_HOST: "db-360b3a.vpc-cdb.ntruss.com"
   NCP_DB_NAME: "dbswen"
   NCP_DB_USERNAME: "swen"
   NCP_PRIVATE_SUBNET: "10.0.1.0/24"

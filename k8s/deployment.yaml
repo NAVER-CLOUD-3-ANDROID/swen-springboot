@@ -29,8 +29,8 @@ spec:
                 key: SPRING_PROFILES_ACTIVE
           - name: NAVER_CLIENT_ID
             valueFrom:
-              configMapKeyRef:
-                name: swen-config
+              secretKeyRef:
+                name: swen-secret
                 key: NAVER_CLIENT_ID
           - name: NAVER_CLIENT_SECRET
             valueFrom:
@@ -39,8 +39,8 @@ spec:
                 key: NAVER_CLIENT_SECRET
           - name: NAVER_OAUTH_CLIENT_ID
             valueFrom:
-              configMapKeyRef:
-                name: swen-config
+              secretKeyRef:
+                name: swen-secret
                 key: NAVER_OAUTH_CLIENT_ID
           - name: NAVER_OAUTH_CLIENT_SECRET
             valueFrom:
@@ -109,8 +109,8 @@ spec:
                 key: NCP_OBJECT_STORAGE_ENDPOINT
           - name: NCP_DB_HOST
             valueFrom:
-              configMapKeyRef:
-                name: swen-config
+              secretKeyRef:
+                name: swen-secret
                 key: NCP_DB_HOST
           - name: NCP_DB_NAME
             valueFrom:
